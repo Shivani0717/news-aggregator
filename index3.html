@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📰 Cloud News Aggregator</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body.dark {
+      background-color: #121212;
+      color: white;
+    }
+    .card {
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: scale(1.02);
+    }
+    .category-btn {
+      transition: 0.3s;
+    }
+    .category-btn:hover {
+      background-color: #2563eb;
+      color: white;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen transition">
+  <header class="text-center py-6 bg-blue-600 text-white shadow-md">
+    <h1 class="text-3xl font-bold">📰 Cloud News Aggregator</h1>
+    <p class="text-sm mt-1">Live news fetched from the cloud</p>
+  </header>
+
+  <!-- Search bar -->
+  <div class="flex justify-center mt-4">
+    <input id="searchInput" type="text" placeholder="Search news..." class="border p-2 w-1/2 rounded-l">
+    <button id="searchBtn" class="bg-blue-600 text-white px-4 rounded-r">Search</button>
+  </div>
+
+  <!-- Category filters -->
+  <div class="flex justify-center flex-wrap mt-4 gap-2 px-4">
+    <button class="category-btn bg-gray-200 px-3 py-1 rounded" data-category="general">General</button>
+    <button class="category-btn bg-gray-200 px-3 py-1 rounded" data-category="business">Business</button>
+    <button class="category-btn bg-gray-200 px-3 py-1 rounded" data-category="technology">Technology</button>
+    <button class="category-btn bg-gray-200 px-3 py-1 rounded" data-category="health">Health</button>
+    <button class="category-btn bg-gray-200 px-3 py-1 rounded" data-category="science">Science</button>
+    <button class="category-btn bg-gray-200 px-3 py-1 rounded" data-category="sports">Sports</button>
+    <button class="category-btn bg-gray-200 px-3 py-1 rounded" data-category="entertainment">Entertainment</button>
+  </div>
+
+  <!-- Dark mode toggle -->
+  <div class="flex justify-center mt-3">
+    <button id="toggleTheme" class="bg-gray-200 px-3 py-1 rounded">🌙 Toggle Dark Mode</button>
+  </div>
+
+  <!-- News container -->
+  <main id="newsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6"></main>
+
+  <script>
+    const newsContainer = document.getElementById("newsContainer");
+    const searchBtn = document.getElementById("searchBtn");
+    const searchInput = document.getElementById("searchInput");
+    const toggleTheme = document.getElementById("toggleTheme");
+    const categoryButtons = document.querySelectorAll(".category-btn");
+
+    const API_KEY = "affc8f54014a451282ed8f59ee3442f0"; // 🔑 Replace with your NewsAPI key
+
+    async function fetchNews(query = "", category = "general") {
+      newsContainer.innerHTML = `<p class='text-center col-span-3 text-gray-500'>Loading news...</p>`;
+      let url = "";
+
+      if (query) {
+        url = `https://newsapi.org/v2/everything?q=${query}&language=en&apiKey=${API_KEY}`;
+      } else {
+        url = `https://newsapi.org/v2/everything?q=${category}&language=en&sortBy=publishedAt&apiKey=${API_KEY}`;
+      }
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.articles || data.articles.length === 0) {
+          newsContainer.innerHTML = `<p class='text-center col-span-3 text-gray-400'>No news found.</p>`;
+          return;
+        }
+
+        newsContainer.innerHTML = data.articles
+          .map(
+            (article) => `
+            <div class="card bg-white shadow-lg rounded-lg overflow-hidden dark:bg-gray-800">
+              <img src="${article.urlToImage || 'https://via.placeholder.com/400x200'}" 
+                   alt="news image" class="w-full h-48 object-cover">
+              <div class="p-4">
+                <h2 class="font-bold text-lg mb-2">${article.title}</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">${article.description || ""}</p>
+                <a href="${article.url}" target="_blank" 
+                   class="text-blue-600 font-semibold">Read More →</a>
+              </div>
+            </div>
+          `
+          )
+          .join("");
+      } catch (error) {
+        newsContainer.innerHTML = `<p class='text-center col-span-3 text-red-500'>Error fetching news 😞</p>`;
+        console.error(error);
+      }
+    }
+
+    // Search feature
+    searchBtn.addEventListener("click", () => {
+      const query = searchInput.value.trim();
+      fetchNews(query);
+    });
+
+    // Category buttons
+    categoryButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const category = btn.dataset.category;
+        fetchNews("", category);
+      });
+    });
+
+    // Dark Mode Toggle
+    toggleTheme.addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      document.body.classList.contains("dark")
+        ? (toggleTheme.textContent = "☀️ Light Mode")
+        : (toggleTheme.textContent = "🌙 Dark Mode");
+    });
+
+    // Load top headlines on page load
+    fetchNews();
+  </script>
+</body>
+</html>
